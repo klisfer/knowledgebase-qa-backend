@@ -23,6 +23,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 
+
 @app.route('/', methods=['POST'])
 async def home():
     api_type = request.form.get("apiType")
@@ -61,7 +62,7 @@ async def home():
 
         response = await summarise_media_url(media_url, userEmail, summary_length, summary_format)
         return response
-    
+
     elif api_type == "summarise-media-upload":
         file = request.files['file']
         userEmail = request.form.get("userEmail")
@@ -77,15 +78,16 @@ async def home():
         response = await transcribe_recording_upload(file, userEmail)
         return response
     elif api_type == "regenerate-summary":
-         docId = request.form.get("docId")
-         summaryLength = request.form.get("summaryLength")
-         summary_format = request.form.get("summaryFormat")
+        docId = request.form.get("docId")
+        summaryLength = request.form.get("summaryLength")
+        summary_format = request.form.get("summaryFormat")
 
-         summaryContext = request.form.get("summaryContext")
-         response = await regenerate_summary(docId, summaryLength, summaryContext, summary_format)
-         return response
+        summaryContext = request.form.get("summaryContext")
+        response = await regenerate_summary(docId, summaryLength, summaryContext, summary_format)
+        return response
     else:
         return {"error": "Invalid apiType parameter"}, 400
+
 
 @app.route('/regenerate-summary', methods=['POST'])
 async def regenerate():
@@ -95,64 +97,70 @@ async def regenerate():
 #  =================================================================
 #  =================================================================
 # @app.route("/summarise-text", methods=['GET'])
+
+
 async def summarise_text_url(url, userEmail, summary_length, summary_format):
     content = ''
     document_id = ''
     summary = ''
-    if url :
+    if url:
         content = ''
         print(url, userEmail)
         document_id = await DBFunctions.start_summarising(userEmail, url, "text")
         if url.lower().endswith('.pdf') is True:
             content = await load_pdf(url)
             await DBFunctions.save_raw_text(content, document_id)
-            summary = textSummarisation.summarize_large_text(content, summary_length, summary_format)
-            split_summary = summary['output_text'].split('\n', 1)  # split the string at the first newline character
+            summary = textSummarisation.summarize_large_text(
+                content, summary_length, summary_format)
+            # split the string at the first newline character
+            split_summary = summary['output_text'].split('\n', 1)
             title = split_summary[0]  # t
             await save_embeddings_to_verctor_store(content, userEmail, title)
             await save_embeddings_to_verctor_store(summary['output_text'], userEmail, title)
         else:
             scrapedText = scrapeUrl.scrape_url(url)
-            print("scrappy",scrapedText)
+            print("scrappy", scrapedText)
             content = scrapedText["text"]
             await DBFunctions.save_raw_text(content, document_id, scrapedText["html"])
-            summary = textSummarisation.summarize_large_text(content, summary_length, summary_format)
-            split_summary = summary['output_text'].split('\n', 1)  # split the string at the first newline character
+            summary = textSummarisation.summarize_large_text(
+                content, summary_length, summary_format)
+            # split the string at the first newline character
+            split_summary = summary['output_text'].split('\n', 1)
             title = split_summary[0]  # t
             await save_embeddings_to_verctor_store(content, userEmail, title)
             await save_embeddings_to_verctor_store(summary['output_text'], userEmail, title)
         await DBFunctions.save_summary(summary, document_id)
-        
- 
+
     return summary
 
 # @app.route("/summarise-text", methods=['POST'])
+
+
 async def summarise_text_upload(file, userEmail, summary_length, summary_format):
     summary = ''
     document_id = ''
 
     if file:
-         if file.filename == '':
+        if file.filename == '':
             return 'No selected file', 400
-         if file:
+        if file:
             filename = secure_filename(file.filename)
             print(filename)
 
-           
-           
-
-            print('\workspace\\'  + filename , userEmail)
+            print('\workspace\\' + filename, userEmail)
             document_id = await DBFunctions.start_summarising(userEmail, filename, "text")
             file.save('workspace' + filename)
-            
-            file_content = parse_file('workspace' + filename)
-            
-            print(file_content)
-            await DBFunctions.save_raw_text(file_content, document_id) 
 
-            summary = textSummarisation.summarize_large_text(file_content, summary_length, summary_format)
-            split_summary = summary['output_text'].split('\n', 1)  # split the string at the first newline character
-            title = split_summary[0]  
+            file_content = parse_file('workspace' + filename)
+
+            print(file_content)
+            await DBFunctions.save_raw_text(file_content, document_id)
+
+            summary = textSummarisation.summarize_large_text(
+                file_content, summary_length, summary_format)
+            # split the string at the first newline character
+            split_summary = summary['output_text'].split('\n', 1)
+            title = split_summary[0]
             await save_embeddings_to_verctor_store(file_content, userEmail, title)
             await save_embeddings_to_verctor_store(summary['output_text'], userEmail, title)
             print("uploaded summary", summary)
@@ -160,117 +168,98 @@ async def summarise_text_upload(file, userEmail, summary_length, summary_format)
     return summary
 
 # @app.route("/summarise-media", methods=['GET'])
+
+
 async def summarise_media_url(media_url, userEmail, summary_length, summary_format):
     print("url is", media_url)
-    
-    file_name =''.join(e for e in media_url.split("/")[-1] if e.isalnum())
+
+    file_name = ''.join(e for e in media_url.split("/")[-1] if e.isalnum())
     document_id = await DBFunctions.start_summarising(userEmail, media_url, "media")
     if 'youtube' in media_url or 'youtu.be' in media_url:
-        download_video(media_url, file_name) 
+        download_video(media_url, file_name)
     else:
         audio_file = requests.get(media_url, allow_redirects=True)
         print(audio_file.status_code, file_name)
         if audio_file.status_code == 200:
             with open(f"workspace/{file_name}.mp3", "wb") as file:
                 file.write(audio_file.content)
-              
 
     print('file downloaded')
 
-
     # transcribe audio using powershell script
+    content = ''
     try:
-        # result = subprocess.run(
-        #     ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", "api/Scripts/transcribe.ps1", file_name],
-        #     stdout=subprocess.PIPE,
-        #     stderr=subprocess.PIPE,
-        #     text=True,
-        #     check=True,
-        # )
-        output = subprocess.Popen(['powershell.exe',  "-File", "api/Scripts/transcribe.ps1" , f".\{file_name}.mp3"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(output.stdout.read().decode().strip())
-        print("Output:", output)
+        url = 'https://query.podnotes.ai'
+        file_path = os.path.join('workspace', f"{file_name}.mp3")
+        print("PATH", file_path)
+        # formdata = {'file':  open(file_path, 'rb')}
+        with open(file_path, 'rb') as file:
+            print("FILE", file)
+            response = requests.post(url, files={"file": file})
+            print(response.status_code)
+            print("TRANSCRIPT", response.text)
+            content = response.text
+
     except subprocess.CalledProcessError as error:
         print(f"Error occurred: {error}")
 
-
-    #load transcript and summarise text and save to firestore
+    # load transcript and summarise text and save to firestore
     text_summary = ''
-    with open(f"workspace/{file_name}.txt", 'r', encoding="utf-8") as file:
-        content = file.read()
-        await DBFunctions.save_raw_text(content, document_id)
-        text_summary = textSummarisation.summarize_large_text(content, summary_length, summary_format)
-        split_summary = text_summary['output_text'].split('\n', 1)  # split the string at the first newline character
-        title = split_summary[0]  # t
-        await save_embeddings_to_verctor_store(content, userEmail, title)
+    await DBFunctions.save_raw_text(content, document_id)
+    text_summary = textSummarisation.summarize_large_text(
+        content, summary_length, summary_format)
+    # split the string at the first newline character
+    split_summary = text_summary['output_text'].split('\n', 1)
+    title = split_summary[0]  # t
+    await save_embeddings_to_verctor_store(content, userEmail, title)
     await save_embeddings_to_verctor_store(text_summary['output_text'], userEmail, title)
     await DBFunctions.save_summary(text_summary, document_id)
-    # delete transcripts if it exists 
+    # delete transcripts if it exists
     delete_if_exists(f"workspace/{file_name}.txt")
     delete_if_exists(f"workspace/{file_name}.ts.txt")
     delete_if_exists(f"workspace/{file_name}.mp3")
 
-    return text_summary  
-  
+    return text_summary
+
 # @app.route("/summarise-media", methods=['POST'])
+
+
 async def summarise_media_upload(file, userEmail, summary_length, summary_format):
-    document_id = await DBFunctions.start_summarising(userEmail, file.filename , "media")
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join('workspace', filename)
+    document_id = await DBFunctions.start_summarising(userEmail, file.filename, "media")
+    file_name = ''.join(e for e in file.filename.split("/")[-1] if e.isalnum())
 
-        mimetype = mimetypes.guess_type(filepath)[0]
+    path = os.path.join('workspace', file_name)
+    file.save(path)
 
-        if mimetype and mimetype.startswith('video'):
-            file.save(filepath)
-            audio_filename = 'media' + '.mp3'
-            audio_filepath = os.path.join(app.config['workspace'], audio_filename)
+    # transcribe audio using powershell script
+    try:
+        result = subprocess.Popen(['powershell.exe',  "-File", "api/Scripts/transcribe.ps1",
+                                  f".\{file_name}.mp3"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("Output:", result)
 
-            audioclip = AudioFileClip(filepath)
-            audioclip.write_audiofile(audio_filepath)
-            os.remove(filepath)  # delete the original video file
-            print('file downloaded')
+        text_summary = ''
+        with open(f"workspace/{file_name}.txt", 'r') as file:
+            content = file.read()
+            await save_embeddings_to_verctor_store(content, userEmail)
+            await DBFunctions.save_raw_text(content, document_id)
+            text_summary = textSummarisation.summarize_large_text(
+                content, summary_length, summary_format)
 
-              
-        elif mimetype and mimetype.startswith('audio'):
-            path = os.path.join('workspace', 'media.mp3')
-            file.save(path)
+        await save_embeddings_to_verctor_store(text_summary, userEmail)
+        await DBFunctions.save_summary(text_summary, document_id)
+        delete_if_exists(f"workspace/{file_name}.txt")
+        delete_if_exists(f"workspace/{file_name}.ts.txt")
+        delete_if_exists(f"workspace/{file_name}.mp3")
+
+        return text_summary, 200
+
+    except subprocess.CalledProcessError as error:
+        print(f"Error occurred: {error}")
+        return error
+
+        # load transcript and summarise text and save to firestore
 
 
-        # delete transcripts if it exists 
-        delete_if_exists('workspace/media.txt')
-        delete_if_exists('workspace/media.ts.txt')
-        # transcribe audio using powershell script
-        try:
-            result = subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", "api/Scripts/transcribe.ps1"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=True,
-            )
-            print("Output:", result)
-
-            text_summary = ''
-            with open('workspace/media.txt', 'r') as file:
-                content = file.read()
-                await DBFunctions.save_raw_text(content, document_id)
-                text_summary = textSummarisation.summarize_large_text(content, summary_length, summary_format)
-                split_summary = text_summary['output_text'].split('\n', 1)  # split the string at the first newline character
-                title = split_summary[0]  # t
-                await save_embeddings_to_verctor_store(content, userEmail, title)
-            
-            await save_embeddings_to_verctor_store(text_summary['output_text'], userEmail, title)
-            await DBFunctions.save_summary(text_summary, document_id)
-        
-            return text_summary , 200
-
-        except subprocess.CalledProcessError as error:
-            print(f"Error occurred: {error}")
-            return error
-
-        #load transcript and summarise text and save to firestore
-      
 async def transcribe_recording_upload(file, userEmail):
     if file:
         # saving received audio file
@@ -278,19 +267,19 @@ async def transcribe_recording_upload(file, userEmail):
         filepath = os.path.join('workspace', filename)
         file.save(filepath)
         audioclip = AudioFileClip(filepath)
-        
+
         # converting file to mp3
         audio_filename = 'media' + '.mp3'
         audio_filepath = os.path.join('workspace', audio_filename)
         audioclip.write_audiofile(audio_filepath)
-        
 
         delete_if_exists('workspace/media.txt')
         delete_if_exists('workspace/media.ts.txt')
-              # transcribe audio using powershell script
+        # transcribe audio using powershell script
         try:
             result = subprocess.run(
-                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", "api/Scripts/transcribe.ps1"],
+                ["powershell.exe", "-ExecutionPolicy", "Bypass",
+                    "-File", "api/Scripts/transcribe.ps1"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -301,39 +290,43 @@ async def transcribe_recording_upload(file, userEmail):
             transcript = ''
             with open('workspace/media.txt', 'r') as file:
                 transcript = file.read()
-                
+
             print("transcript", transcript)
             # await DBFunctions.save_recording_transcript(transcript, userEmail)
-        
-            return transcript , 200
+
+            return transcript, 200
 
         except subprocess.CalledProcessError as error:
             print(f"Error occurred: {error}")
             return error
-  
+
+
 async def regenerate_summary(docId, summaryLength, summaryContext, summary_format):
-    new_summary = textSummarisation.refineSummary(summaryContext, summaryLength, summary_format)
+    new_summary = textSummarisation.refineSummary(
+        summaryContext, summaryLength, summary_format)
     response = await DBFunctions.update_new_summary(new_summary, docId)
     return new_summary
 # Util functions
 #  =================================================================
 #  =================================================================
+
+
 async def save_embeddings_to_verctor_store(text, userEmail, title):
     collection_name = userEmail.split('@')[0]
     response = await chromaLocal.saveFiles(text, collection_name, title)
-    print(f"Saved to collection {collection_name}", len(text), title)    
+    print(f"Saved to collection {collection_name}", len(text), title)
     return response
+
 
 def delete_if_exists(file_path):
     """Delete the file at `file_path` if it exists."""
     if os.path.isfile(file_path):
         os.remove(file_path)
-        
 
 
 def parse_file(filepath):
     file_extension = os.path.splitext(filepath)[1]
-    
+
     if file_extension == '.txt':
         with open(filepath, 'r') as f:
             return f.read()
@@ -350,7 +343,8 @@ def parse_file(filepath):
         return text
     else:
         return "Unsupported file type"
-    
+
+
 async def load_pdf(url):
     response = requests.get(url)
 
@@ -362,8 +356,9 @@ async def load_pdf(url):
     for page in pdf_reader.pages:
         content += page.extract_text()
 
-    print('pdf_content',content)
+    print('pdf_content', content)
     return content
+
 
 def read_file_contents(blob):
     return blob.download_as_text()
@@ -379,6 +374,8 @@ def download_video(video_url, filename):
     video_clip.to_audiofile("workspace/" + filename + '.mp3')
     video_clip.close()
     print('saved audio')
- 
+
+
 if __name__ == "__main__":
-    app.run(debug=False, use_reloader=False, host="0.0.0.0", port=5001, threaded=True)
+    app.run(debug=False, use_reloader=False,
+            host="0.0.0.0", port=5001, threaded=True)
