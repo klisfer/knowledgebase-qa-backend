@@ -1,4 +1,3 @@
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
@@ -17,7 +16,6 @@ load_dotenv()
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 persist_directory = 'local-chromadb'
-embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_API_KEY'])
 encoding = tiktoken.encoding_for_model('davinci')
 tokenizer = tiktoken.get_encoding(encoding.name)
 client = chromadb.PersistentClient(path="local-chromadb")
