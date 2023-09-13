@@ -1,4 +1,3 @@
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
@@ -64,14 +63,6 @@ def chunk_text(text, max_token_size):
     return chunks
 
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=20,
-    length_function=tk_len,
-    separators=['\n\n', '\n', ',', '']
-)
-
-
 async def SaveEmbeddings(chunks, collection_name, metadata, ids):
     collection = client.get_or_create_collection(name=collection_name)
     return collection.add(documents=chunks, metadatas=metadata, ids=ids)
@@ -79,7 +70,6 @@ async def SaveEmbeddings(chunks, collection_name, metadata, ids):
 
 async def saveFiles(text, collection_name, file_title):
     print(len(text), file_title)
-    chunks = text_splitter.split_text(text)
     docs = chunk_text(text, 1000)
     print("DODOD", docs)
     metadata = []
