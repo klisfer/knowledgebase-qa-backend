@@ -24,6 +24,8 @@ dataclasses-json==0.5.7
 decorator==5.1.1
 distlib==0.3.6
 dnspython==2.3.0
+docker==6.0.1
+duckduckgo-search==2.8.5
 entrypoints==0.4
 fastapi==0.99.1
 ffmpeg-python==0.2.0
@@ -45,6 +47,7 @@ gTTS==2.3.1
 h11==0.14.0
 httplib2==0.22.0
 httptools==0.6.0
+huggingface-hub==0.12.1
 humanfriendly==10.0
 identify==2.5.22
 idna==3.4
@@ -80,8 +83,10 @@ overrides==7.4.0
 packaging==23.0
 pandas==1.5.3
 Pillow==9.5.0
+pinecone-client==2.2.1
 platformdirs==3.1.1
 playsound==1.2.2
+posthog==3.0.2
 pre-commit==3.2.2
 protobuf==3.20.3
 pulsar-client==3.3.0
@@ -122,6 +127,10 @@ soupsieve==2.4
 SpeechRecognition==3.10.0
 SQLAlchemy==1.4.47
 starlette==0.27.0
+steamship==2.14.1
+steamship-langchain==0.0.15
+streamlit==1.21.0
+streamlit-ace==0.1.1
 sympy==1.12
 tenacity==8.2.2
 termcolor==2.2.0
