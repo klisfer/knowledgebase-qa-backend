@@ -1,10 +1,3 @@
-from langchain.vectorstores import Chroma
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA
-from chromadb.config import Settings
-from langchain.docstore.document import Document
-from langchain.chains.summarize import load_summarize_chain
-from langchain.llms import OpenAI
 from chromadb.utils import embedding_functions
 import tiktoken
 import chromadb
