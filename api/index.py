@@ -105,7 +105,6 @@ async def summarise_text_url(url, userEmail, summary_length, summary_format):
     summary = ''
     if url:
         content = ''
-        print(url, userEmail)
         document_id = await DBFunctions.start_summarising(userEmail, url, "text")
         if url.lower().endswith('.pdf') is True:
             content = await load_pdf(url)
