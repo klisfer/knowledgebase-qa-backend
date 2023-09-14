@@ -26,6 +26,7 @@ app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 
 @app.route('/', methods=['POST'])
 async def home():
+    print("API request received")
     api_type = request.form.get("apiType")
     print("form api type: %s" % api_type)
     if api_type == "get-query-response":
