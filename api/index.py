@@ -376,4 +376,4 @@ def download_video(video_url, filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=False, use_reloader=False, threaded=True)
+    app.run(debug=False, host="0.0.0.0", use_reloader=False, threaded=True)
