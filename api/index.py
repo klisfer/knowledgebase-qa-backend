@@ -189,7 +189,7 @@ async def summarise_media_url(media_url, userEmail, summary_length, summary_form
     # transcribe audio using powershell script
     content = ''
     try:
-        url = 'https://api.knowledgebaseapp.io'
+        url = 'https://query.podnotes.ai'
         file_path = os.path.join('workspace', f"{file_name}.mp3")
         print("PATH", file_path)
         # formdata = {'file':  open(file_path, 'rb')}
