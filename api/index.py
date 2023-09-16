@@ -190,7 +190,7 @@ async def summarise_media_url(media_url, userEmail, summary_length, summary_form
     content = ''
     try:
         url = 'https://query.podnotes.ai'
-        response = requests.post(url, files={"url": media_url})
+        response = requests.post(url, data={"url": media_url})
         print(response.status_code)
         print("TRANSCRIPT", response.text)
         content = response.text
