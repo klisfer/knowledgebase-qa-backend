@@ -198,9 +198,9 @@ async def summarise_media_url(media_url, userEmail, summary_length, summary_form
     await save_embeddings_to_verctor_store(text_summary['output_text'], userEmail, title)
     await DBFunctions.save_summary(text_summary, document_id)
     # delete transcripts if it exists
-    delete_if_exists(f"workspace/{file_name}.txt")
-    delete_if_exists(f"workspace/{file_name}.ts.txt")
-    delete_if_exists(f"workspace/{file_name}.mp3")
+    # delete_if_exists(f"workspace/{file_name}.txt")
+    # delete_if_exists(f"workspace/{file_name}.ts.txt")
+    # delete_if_exists(f"workspace/{file_name}.mp3")
 
     return text_summary
 
