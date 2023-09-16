@@ -173,33 +173,28 @@ async def summarise_text_upload(file, userEmail, summary_length, summary_format)
 async def summarise_media_url(media_url, userEmail, summary_length, summary_format):
     print("url is", media_url)
 
-    file_name = ''.join(e for e in media_url.split("/")[-1] if e.isalnum())
-    document_id = await DBFunctions.start_summarising(userEmail, media_url, "media")
-    if 'youtube' in media_url or 'youtu.be' in media_url:
-        download_video(media_url, file_name)
-    else:
-        audio_file = requests.get(media_url, allow_redirects=True)
-        print(audio_file.status_code, file_name)
-        if audio_file.status_code == 200:
-            with open(f"workspace/{file_name}.mp3", "wb") as file:
-                file.write(audio_file.content)
+    # file_name = ''.join(e for e in media_url.split("/")[-1] if e.isalnum())
+    # document_id = await DBFunctions.start_summarising(userEmail, media_url, "media")
+    # if 'youtube' in media_url or 'youtu.be' in media_url:
+    #     download_video(media_url, file_name)
+    # else:
+    #     audio_file = requests.get(media_url, allow_redirects=True)
+    #     print(audio_file.status_code, file_name)
+    #     if audio_file.status_code == 200:
+    #         with open(f"workspace/{file_name}.mp3", "wb") as file:
+    #             file.write(audio_file.content)
 
-    print('file downloaded')
+    # print('file downloaded')
 
     # transcribe audio using powershell script
     content = ''
     try:
         url = 'https://query.podnotes.ai'
-        file_path = os.path.join('workspace', f"{file_name}.mp3")
-        print("PATH", file_path)
-        # formdata = {'file':  open(file_path, 'rb')}
-        with open(file_path, 'rb') as file:
-            print("FILE", file)
-            response = requests.post(url, files={"file": file})
-            print(response.status_code)
-            print("TRANSCRIPT", response.text)
-            content = response.text
-
+        response = requests.post(url, files={"url": media_url})
+        print(response.status_code)
+        print("TRANSCRIPT", response.text)
+        content = response.text
+        
     except subprocess.CalledProcessError as error:
         print(f"Error occurred: {error}")
 
